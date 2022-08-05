@@ -176,7 +176,7 @@ def home(pageNum=1):
 		messages = content['messages']
 
 	host = "%s:%s" % server.hostInfo
-	messages = copy.deepcopy(content['messages'])
+	messages = copy.deepcopy(messages)
 	messages.sort( lambda A, B: [-1,1][ A['time'] < B['time'] ] )
 
 	initialMessageCount = len(messages)
