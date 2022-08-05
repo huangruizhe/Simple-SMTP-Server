@@ -8,6 +8,7 @@ import bottle
 import time
 import copy
 import email
+import traceback
 
 from bottle import Bottle, route, run as bottlerun, static_file, install
 
@@ -42,20 +43,20 @@ class PickleData:
 		self.content = None
 
 		if os.path.exists(self.fileName):
-			readHandle = open(self.fileName,'r')
+			readHandle = open(self.fileName,'rb')
 			try:
 				self.content = pickle.load( readHandle )
-			except:
-				print "Empty or corrupt db"
+			except Exception:
+				print("Empty or corrupt db")
 
 			readHandle.close()
 
 	def read(self):
 		return self.content
 
-	def save(self,c):
-		self.content = c;
-		writeHandle = open(self.fileName,'w+')
+	def save(self, c):
+		self.content = c
+		writeHandle = open(self.fileName,'wb')
 		pickle.dump(self.content, writeHandle)
 		writeHandle.close()
 
@@ -77,17 +78,17 @@ class SMTPServer(smtpd.SMTPServer):
 		messageQueue.append(messagePacket)
 		self.store_message(messagePacket)
 
-		print "#####################################################"
-		print 'Receiving from', _from
-		print 'Sending to', _to
-		print 'Peer', _peer
-		print 'Data', _data
+		print("#####################################################")
+		print('Receiving from', _from)
+		print('Sending to', _to)
+		print('Peer', _peer)
+		print('Data', _data)
 
 	def store_message(self,messagePacket):
 		dump = messageStore.read()
 		if dump is None:
 			dump = {}
-		if not dump.has_key( 'messages' ):
+		if 'messages' not in dump:
 			dump['messages'] = []
 
 		messagePacket['id'] = len(dump['messages']) + 1
@@ -105,21 +106,21 @@ class SMTPServerThread(threading.Thread,object):
 		while self.active:
 			try:
 				asyncore.loop()
-			except Exception, e:
-				print 'Asyncore Error'
+			except Exception as e:
+				print('Asyncore Error')
 			pass
 
 		server.close()
 
 	def close(self):
 		asyncore.close_all()
-		print 'Closing SMTP Server'
+		print('Closing SMTP Server')
 		self.active = False
 		# self.server.close()
 		
 	#@staticmethod
 	def setup(self):
-		print 'Starting SMTP Server'
+		print('Starting SMTP Server')
 		self.start()
 		self.server = SMTPServer(self.hostInfo, None)
 		pass
@@ -150,9 +151,9 @@ def readMsg(id=-1):
 	try:
 		id = int(id)
 		messages = content['messages']
-		msg = filter( lambda m: m['id'] == id, messages ).pop()
+		msg = [m for m in messages if m['id'] == id].pop()
 
-		if not msg.has_key('read') or msg['read'] != True:
+		if 'read' not in msg or msg['read'] != True:
 			msg['read'] = True
 			messageStore.save(content)
 			messageQueue = []
@@ -171,7 +172,7 @@ def home(pageNum=1):
 
 	if content is None:
 		messages = []
-	elif content.has_key('messages'):
+	elif 'messages' in content:
 		messages = content['messages']
 
 	host = "%s:%s" % server.hostInfo
@@ -188,7 +189,7 @@ def home(pageNum=1):
 			title += emsg.get_payload()
 
 		each['title'] = title[:40]
-		print each['title']
+		print(each['title'])
 
 	return render("home.template.html",{ 'messages':messages, 'page':pageNum, 'host':host })
 
@@ -201,15 +202,15 @@ runServer = True
 server = SMTPServerThread(('127.0.0.1', 1130) )	#SMTP Server IP
 try:
 	if runServer:
-		print 'Starting server'
+		print('Starting server')
 		server.setup()
 
-	print 'Starting bottle'
+	print('Starting bottle')
 	bottle.debug(True)
 	bottle.run(app, host='localhost', port=8080, reloader=(not runServer))
-except Exception, e:
-	print "Dead"
+except Exception as e:
+	print("Dead")
 	#raise e
 finally:
 	server.close()
-	print "Bye"
+	print("Bye")
