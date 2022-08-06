@@ -29,6 +29,7 @@ def render(name, *values):
 		ctx.push()
 		ctx.update(d)
 
+	import pdb; pdb.set_trace()
 	t = django.template.loader.get_template(name)
 	# print dir(t)
 	return str(t.render(ctx))
@@ -46,6 +47,7 @@ class PickleData:
 			readHandle = open(self.fileName,'rb')
 			try:
 				self.content = pickle.load( readHandle )
+				# print(self.content)
 			except Exception:
 				print("Empty or corrupt db")
 
@@ -177,7 +179,8 @@ def home(pageNum=1):
 
 	host = "%s:%s" % server.hostInfo
 	messages = copy.deepcopy(messages)
-	messages.sort( lambda A, B: [-1,1][ A['time'] < B['time'] ] )
+	# messages.sort( lambda A, B: [-1,1][ A['time'] < B['time'] ] )
+	messages.sort( key=lambda msg: msg['time'] )
 
 	initialMessageCount = len(messages)
 	for each in messages:
